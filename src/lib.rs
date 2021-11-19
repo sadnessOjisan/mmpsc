@@ -1,5 +1,5 @@
-struct mmpsc {
-    queue: Vec<i8>
+pub fn hello_from_lib() {
+    println!("hello from lib")
 }
 
 #[cfg(test)]
