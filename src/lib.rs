@@ -1,3 +1,5 @@
+struct mmpsc {}
+
 pub fn hello_from_lib() {
     println!("hello from lib")
 }
