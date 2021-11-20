@@ -1,4 +1,9 @@
-use std::{cell::RefCell, collections::HashMap, sync::mpsc::{Receiver, Sender, channel}, thread::spawn};
+use std::{
+    cell::RefCell,
+    collections::HashMap,
+    sync::mpsc::{channel, Receiver, Sender},
+    thread::spawn,
+};
 
 fn get_rand() -> u32 {
     let num1: Vec<u32> = vec![2, 3];
@@ -19,24 +24,20 @@ fn main() {
                 store.entry(random).or_insert_with(|| {
                     let (tx, rx) = channel::<u32>();
                     println!("strt");
-                    spawn(move || {
-                        loop {
-                            let val = rx.recv();
-                            match val {
-                                Result::Ok(v) => {
-                                    println!("success")
-                                }
-                                Result::Err(e) => {
-                                    println!("error")
-                                }
+                    spawn(move || loop {
+                        let val = rx.recv();
+                        match val {
+                            Result::Ok(v) => {
+                                println!("success")
                             }
-                        };
+                            Result::Err(e) => {
+                                println!("error")
+                            }
+                        }
                     });
                     RefCell::new(tx)
                 });
-              
             });
         });
     }
-    
 }
