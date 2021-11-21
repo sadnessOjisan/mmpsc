@@ -11,11 +11,15 @@ use std::{
     task::Context,
 };
 
+// Pin: move したらもうい使わないからということでアドレスを変える
+
 struct Task {
     // 実行するコルーチン
     // Q:なんでこんな型？
+    // ouput: associated type(関連型), trait が持っている型エイリアス
     future: Mutex<BoxFuture<'static, ()>>,
     // Exector へスケジューリングするためのチャネル
+    // dyn で vtable, box のポインタで検索
     sender: SyncSender<Arc<Task>>,
 }
 
@@ -53,10 +57,13 @@ impl Execcutor {
     pub fn run(&self) {
         while let Ok(task) = self.receiver.recv() {
             // Q: 一般的に future ってどういう意味？
+            // future: task, js: future promise
             let mut future = task.future.lock().unwrap();
             let waker = waker_ref(&task);
             let mut ctx = Context::from_waker(&waker);
             // Q: 一般的に poll ってどういう意味？ あと、wake はどういう意味？
+            // poll に対して task の問い合わせ
+            // wake: コルーチンの起動
             let _ = future.as_mut().poll(&mut ctx);
         }
     }
@@ -78,7 +85,48 @@ impl Spawner {
     }
 }
 
-struct mmpsc {}
+struct mmpsc {
+    queue: Vec<>
+}
+
+trait Hoge:Send + Sync {
+}
+
+mod mmpsc {
+    use crate::Hoge;
+    struct  Sender<T : Hoge>  {
+        queue: Arc<Vec<T>>
+    }
+
+    impl Sender {
+        fn send(){}
+    }
+
+    struct Receiver<T> {
+        queue: Arc<Vec<T>>
+    }
+
+    impl Receiver{
+        fn receive( ){}
+    }
+
+    fn channel<T: Hoge>() -> (Sender, Receiver) where T: Hoge {
+        let queue = Arc::new::<Vec<T>>();
+        (Sender{
+            queue: queue.clone()
+        }, Receive{queue: queue.clone()})
+    }
+}
+
+impl mmpsc {
+    fn send(){
+        self.queue.push(hoge)
+    }
+
+    fn receive(){
+        
+    }
+}
 
 pub fn hello_from_lib() {
     println!("hello from lib")
