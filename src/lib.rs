@@ -78,11 +78,11 @@ impl Spawner {
     }
 }
 
-struct mmpsc {}
-
 pub fn hello_from_lib() {
     println!("hello from lib")
 }
+
+pub mod mmpsc;
 
 #[cfg(test)]
 mod tests {
