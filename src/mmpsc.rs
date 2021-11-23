@@ -1,7 +1,7 @@
 pub mod mmpsc {
+    use std::{sync::{Arc, Mutex}};
     trait SendSync: Send + Sync {}
 
-    use std::{sync::{Arc, Mutex}};
 
     struct Sender<T: SendSync> {
         queue: Arc<Mutex<Vec<T>>>,
@@ -9,7 +9,8 @@ pub mod mmpsc {
 
     impl<T: SendSync> Sender<T> {
         fn send(&mut self, item: T) {
-            self.queue.push(item)
+            // Q: 異常系はどうしたらいいだろうか？
+            self.queue.lock().unwrap().push(item)
         }
     }
 
@@ -21,12 +22,13 @@ pub mod mmpsc {
         fn receive(&self) -> Option<&T> {
             let mut item = None::<&T>;
             loop {
-                item = self.queue.get(0);
+                // Q: mpsc はロックフリーな queue だが、Arc の中を変更可能にするには Mutex を使う必要が出てくるのでは
+                item = self.queue.lock().unwrap().get(0);
                 if (item.is_some()) {
                     break;
                 }
             }
-            item
+            item // Q: ローカル変数への参照をどうやって返したらいいか？
         }
     }
 
