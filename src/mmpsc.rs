@@ -1,20 +1,20 @@
 pub mod mmpsc {
     trait SendSync: Send + Sync {}
 
-    use std::{ops::Not, sync::Arc};
+    use std::{sync::{Arc, Mutex}};
 
     struct Sender<T: SendSync> {
-        queue: Arc<Vec<T>>,
+        queue: Arc<Mutex<Vec<T>>>,
     }
 
     impl<T: SendSync> Sender<T> {
         fn send(&mut self, item: T) {
-            self.queue.push(item) // Q: Arc の中のメソッドそのまま呼べるのか？
+            self.queue.push(item)
         }
     }
 
     struct Receiver<T: SendSync> {
-        queue: Arc<Vec<T>>,
+        queue: Arc<Mutex<Vec<T>>>,
     }
 
     impl<T: SendSync> Receiver<T> {
@@ -34,13 +34,13 @@ pub mod mmpsc {
     where
         T: SendSync,
     {
-        let queue: Arc<Vec<T>> = Arc::new(Default::default());
+        let queue: Arc<Mutex<Vec<T>>> = Arc::new(Mutex::new(Default::default()));
         (
             Sender {
-                queue: queue.clone(),
+                queue: Arc::clone(&queue)
             },
             Receiver {
-                queue: queue.clone(),
+                queue:  Arc::clone(&queue)
             },
         )
     }
