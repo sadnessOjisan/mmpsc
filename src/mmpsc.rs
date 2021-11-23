@@ -1,34 +1,38 @@
 pub mod mmpsc {
     trait SendSync: Send + Sync {}
 
-    trait SendSyncSized: SendSync + Sized {}
-    use std::sync::Arc;
+    use std::{ops::Not, sync::Arc};
 
-    struct Sender<T: Send + Sync> {
+    struct Sender<T: SendSync> {
         queue: Arc<Vec<T>>,
     }
 
-    impl<T: Send + Sync> Sender<T> {
+    impl<T: SendSync> Sender<T> {
         fn send(&mut self, item: T) {
             self.queue.push(item) // Q: Arc の中のメソッドそのまま呼べるのか？
         }
     }
 
-    struct Receiver<T: Send + Sync> {
+    struct Receiver<T: SendSync> {
         queue: Arc<Vec<T>>,
     }
 
-    impl<T: Send + Sync> Receiver<T> {
-        fn receive(&self) {
+    impl<T: SendSync> Receiver<T> {
+        fn receive(&self) -> Option<&T> {
+            let mut item = None::<&T>;
             loop {
-                let item = self.queue.get(0);
+                item = self.queue.get(0);
+                if (item.is_some()) {
+                    break;
+                }
             }
+            item
         }
     }
 
-    fn channel<T: Send + Sync>() -> (Sender<T>, Receiver<T>)
+    fn channel<T: SendSync>() -> (Sender<T>, Receiver<T>)
     where
-        T: Send + Sync,
+        T: SendSync,
     {
         let queue: Arc<Vec<T>> = Arc::new(Default::default());
         (
