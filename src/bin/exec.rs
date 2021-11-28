@@ -9,11 +9,11 @@ fn main() {
     spawn(move || loop {
         receiver.receive();
     });
-
+let mut cnt =0;
     loop {
-        let duration = Duration::from_millis(3000);
+        let duration = Duration::from_millis(1000);
         thread::sleep(duration);
-        println!("sleeped");
-        sender.send("hello".to_string());
+        sender.send(cnt.to_string());
+        cnt += 1;
     }
 }

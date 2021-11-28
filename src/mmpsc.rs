@@ -11,8 +11,7 @@ pub mod mmpsc {
     }
 
     impl<T: Send + Sync> Sender<T> {
-        pub async fn send(&mut self, item: T) {
-            println!("send");
+        pub fn send(&mut self, item: T) {
             self.queue.lock().unwrap().push_back(item)
         }
     }
@@ -23,13 +22,13 @@ pub mod mmpsc {
 
     // debug 目的でいまだけ Debug をつけている
     impl<T: Send + Sync + Debug> Receiver<T> {
-        pub async fn receive(&self) -> Option<T> {
-            println!("queue: {:?}", self.queue);
+        pub fn receive(&self) -> Option<T> {
             let item = loop {
                 if let Some(item) = self.queue.lock().unwrap().pop_front() {
                     break Some(item);
                 }
             };
+            println!("item: {:?}", item); 
             item
         }
     }
