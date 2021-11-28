@@ -1,48 +1,47 @@
 pub mod mmpsc {
-    use std::{sync::{Arc, Mutex}};
-    trait SendSync: Send + Sync {}
+    use std::collections::VecDeque;
+    use std::fmt::Debug;
+    use std::sync::{Arc, Mutex};
 
+    // Q: 呼び出し側が SendSync を実装してないと怒られる。trait でまとめるとダメ？
+    pub trait SendSync: Send + Sync {}
 
-    struct Sender<T: SendSync> {
-        queue: Arc<Mutex<Vec<T>>>,
+    pub struct Sender<T: Send + Sync> {
+        queue: Arc<Mutex<VecDeque<T>>>,
     }
 
-    impl<T: SendSync> Sender<T> {
-        fn send(&mut self, item: T) {
-            // Q: 異常系はどうしたらいいだろうか？
-            self.queue.lock().unwrap().push(item)
+    impl<T: Send + Sync> Sender<T> {
+        pub async fn send(&mut self, item: T) {
+            println!("send");
+            self.queue.lock().unwrap().push_back(item)
         }
     }
 
-    struct Receiver<T: SendSync> {
-        queue: Arc<Mutex<Vec<T>>>,
+    pub struct Receiver<T: Send + Sync> {
+        queue: Arc<Mutex<VecDeque<T>>>,
     }
 
-    impl<T: SendSync> Receiver<T> {
-        fn receive(&self) -> Option<&T> {
-            let mut item = None::<&T>;
-            loop {
-                // Q: mpsc はロックフリーな queue だが、Arc の中を変更可能にするには Mutex を使う必要が出てくるのでは
-                item = self.queue.lock().unwrap().get(0);
-                if (item.is_some()) {
-                    break;
+    // debug 目的でいまだけ Debug をつけている
+    impl<T: Send + Sync + Debug> Receiver<T> {
+        pub async fn receive(&self) -> Option<T> {
+            println!("queue: {:?}", self.queue);
+            let item = loop {
+                if let Some(item) = self.queue.lock().unwrap().pop_front() {
+                    break Some(item);
                 }
-            }
-            item // Q: ローカル変数への参照をどうやって返したらいいか？
+            };
+            item
         }
     }
 
-    fn channel<T: SendSync>() -> (Sender<T>, Receiver<T>)
-    where
-        T: SendSync,
-    {
-        let queue: Arc<Mutex<Vec<T>>> = Arc::new(Mutex::new(Default::default()));
+    pub fn channel<T: Send + Sync>() -> (Sender<T>, Receiver<T>) {
+        let queue: Arc<Mutex<VecDeque<T>>> = Arc::new(Mutex::new(Default::default()));
         (
             Sender {
-                queue: Arc::clone(&queue)
+                queue: Arc::clone(&queue),
             },
             Receiver {
-                queue:  Arc::clone(&queue)
+                queue: Arc::clone(&queue),
             },
         )
     }
